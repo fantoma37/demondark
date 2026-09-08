@@ -48,6 +48,21 @@ function assignRoles(room) {
   const demon = [...room.players.values()].find((player) => player.role === 'Demon')
   if (demon) demon.bluffRole = goodRoles.filter((role) => ![...room.players.values()].some((player) => player.role === role))[0]
 }
+function resetPlayers(room) {
+  for (const player of room.players.values()) {
+    player.alive = true
+    player.role = null
+    player.bluffRole = null
+    player.choice = null
+    player.previousChoice = null
+    player.lastInfo = null
+  }
+  room.result = null
+  room.resolution = null
+  room.firstNight = true
+  assignRoles(room)
+  startPhase(room, 'night', 60)
+}
 function startPhase(room, phase, seconds) {
   room.phase = phase
   room.phaseEndsAt = Date.now() + seconds * 1000
@@ -75,7 +90,7 @@ function startResolution(room, resolution) {
 function checkWin(room) {
   const alive = [...room.players.values()].filter((p) => p.alive)
   const demonAlive = alive.some((p) => p.role === 'Demon')
-  const goodAlive = alive.some((p) => p.role !== 'Demon' && p.role !== 'Minion')
+  const goodAlive = alive.some((p) => goodRoles.includes(p.role))
   if (!demonAlive) room.result = { winner: 'good', title: 'The town endures', copy: 'The Demon has fallen. Dawn belongs to the Good team.' }
   else if (!goodAlive) room.result = { winner: 'evil', title: 'Night takes the village', copy: 'The Demon and Minion have outlasted the Good team.' }
   return Boolean(room.result)
@@ -141,6 +156,12 @@ io.on('connection', (socket) => {
   socket.on('startGame', ({ code }) => {
     const room = rooms.get(code); if (!room || room.hostId !== socket.id || room.players.size < 5) return
     assignRoles(room); room.firstNight = true; startPhase(room, 'night', 60); broadcast(room)
+  })
+  socket.on('rematch', ({ code }) => {
+    const room = rooms.get(code)
+    if (!room || room.hostId !== socket.id || room.phase !== 'gameover') return
+    resetPlayers(room)
+    broadcast(room)
   })
   socket.on('choose', ({ code, targetId }) => {
     const room = rooms.get(code); const player = room?.players.get(socket.id)

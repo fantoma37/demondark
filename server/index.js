@@ -12,7 +12,7 @@ const rooms = new Map()
 const roles = ['Priest', 'Sage', 'Guard', 'Knight', 'Minion', 'Demon', 'Fool']
 const goodRoles = ['Priest', 'Sage', 'Guard', 'Knight']
 const roleDescriptions = {
-  Priest: 'Learn if your chosen player is good. The Fool counts as not good.',
+  Priest: 'Learn if your chosen player is good.',
   Sage: 'Tomorrow night, learn the role of your chosen player.',
   Guard: 'Your chosen player cannot die tonight.',
   Knight: 'If you die, and your chosen player is the Demon, they die instead.',
@@ -33,9 +33,10 @@ function publicRoom(room) {
 function visibleState(room, socketId) {
   const player = room.players.get(socketId)
   const evil = player?.role === 'Demon' || player?.role === 'Minion'
+  const allies = [...room.players.values()].filter((p) => (p.role === 'Demon' || p.role === 'Minion') && p.id !== socketId).map((p) => p.nickname)
   const immediateInfo = player?.lastInfo || (player?.choice && player.role === 'Priest' ? `${room.players.get(player.choice)?.nickname} is ${['Priest', 'Sage', 'Guard', 'Knight'].includes(room.players.get(player.choice)?.role) ? 'good' : 'not good'}.` : player?.choice && player.role === 'Minion' ? `${room.players.get(player.choice)?.nickname} is the ${room.players.get(player.choice)?.role}.` : null)
   const choices = room.phase === 'night' && !player?.choice && !(room.firstNight && player?.role === 'Demon') ? [...room.players.values()].filter((p) => p.alive && p.id !== socketId).map((p) => ({ id: p.id, nickname: p.nickname })) : []
-  return { room: publicRoom(room), me: player ? { ...player, roleDescription: roleDescriptions[player.role], immediateInfo } : null, choices, result: room.result, nightPrompt: player?.role === 'Fool' ? null : room.firstNight && player?.role === 'Demon' ? 'The first night is for learning. Stay hidden and watch.' : player?.role ? roleDescriptions[player.role] : null, teamInfo: evil ? { allies: [...room.players.values()].filter((p) => p.role === 'Demon' || p.role === 'Minion').map((p) => p.nickname), bluff: player?.role === 'Demon' ? player.bluffRole : null } : null }
+  return { room: publicRoom(room), me: player ? { ...player, roleDescription: roleDescriptions[player.role], immediateInfo } : null, choices, result: room.result, nightPrompt: player?.role === 'Fool' ? null : room.firstNight && player?.role === 'Demon' ? 'The first night is for learning. Stay hidden and watch.' : player?.role ? roleDescriptions[player.role] : null, teamInfo: evil ? { allies, bluff: player?.role === 'Demon' ? player.bluffRole : null } : null }
 }
 function broadcast(room) {
   for (const player of room.players.values()) io.to(player.id).emit('state', visibleState(room, player.id))
@@ -94,7 +95,7 @@ function resolveNight(room) {
     player.lastInfo = null
     const target = player.choice ? room.players.get(player.choice) : null
     if (player.role === 'Priest' && target) player.lastInfo = `${target.nickname} is ${['Priest', 'Sage', 'Guard', 'Knight'].includes(target.role) ? 'good' : 'not good'}.`
-    if (player.role === 'Sage' && player.previousChoice && room.players.has(player.previousChoice)) player.lastInfo = `${room.players.get(player.previousChoice).nickname} is the ${room.players.get(player.previousChoice).role}.`
+    if (player.role === 'Sage' && player.alive && player.previousChoice && room.players.has(player.previousChoice)) player.lastInfo = `${room.players.get(player.previousChoice).nickname} is the ${room.players.get(player.previousChoice).role}.`
     if (player.role === 'Minion' && target) player.lastInfo = `${target.nickname} is the ${target.role}.`
     if (player.role === 'Priest' && target) player.lastInfo = `${target.nickname} is ${['Priest', 'Sage', 'Guard', 'Knight'].includes(target.role) ? 'good' : 'not good'}.`
     if (player.role === 'Minion' && target) player.lastInfo = `${target.nickname} is the ${target.role}.`
@@ -146,7 +147,7 @@ io.on('connection', (socket) => {
     const target = room?.players.get(targetId)
     if (!room || !player || !player.alive || player.role === 'Fool' || player.choice || (room.firstNight && player.role === 'Demon') || !target || !target.alive || target.id === player.id || room.phase !== 'night') return
     player.choice = targetId
-    player.lastInfo = player.role === 'Priest' ? `${target.nickname} is ${['Priest', 'Sage', 'Guard', 'Knight'].includes(target.role) ? 'good' : 'not good'}.` : player.role === 'Minion' ? `${target.nickname} is the ${target.role}.` : null
+    player.lastInfo = player.role === 'Priest' ? `${target.nickname} is ${['Priest', 'Sage', 'Guard', 'Knight'].includes(target.role) ? 'good' : 'not good'}.` : player.role === 'Minion' ? `${target.nickname} is the ${target.role}.` : player.lastInfo
     room.choices.set(socket.id, targetId); broadcast(room)
   })
   socket.on('vote', ({ code, targetId }) => {

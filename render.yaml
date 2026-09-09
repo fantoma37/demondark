@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: demon-dark
+    name: demondark
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build

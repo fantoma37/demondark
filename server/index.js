@@ -12,13 +12,13 @@ const rooms = new Map()
 const roles = ['Priest', 'Sage', 'Guard', 'Knight', 'Bard', 'Minion', 'Demon', 'Fool']
 const goodRoles = ['Priest', 'Sage', 'Guard', 'Knight', 'Bard']
 const roleDescriptions = {
-  Priest: 'Learn if your chosen player is good.',
-  Sage: 'Choose a player. At the start of the next night, learn their role.',
-  Guard: 'Choose a player. They cannot die tonight.',
-  Knight: 'Choose a player. If you die, and they are the Demon, they die instead.',
-  Bard: 'Choose a player. They learn that you are the Bard.',
-  Minion: 'Your Demon is your ally. Choose another player to learn their role.',
-  Demon: 'Choose a player to kill tonight.',
+  Priest: 'Learn if the chosen player is good.',
+  Sage: "Tomorrow night, learn the chosen player's role.",
+  Guard: 'The chosen player cannot die tonight.',
+  Knight: "If you die, and the chosen player is the Demon, they die instead.",
+  Bard: 'The chosen player learns that you are the Bard.',
+  Minion: 'Learn the chosen player’s role.',
+  Demon: 'The chosen player dies tonight.',
   Fool: 'If the town executes you, you win.'
 }
 

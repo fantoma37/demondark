@@ -13,8 +13,8 @@ type GameState = {
 
 const socket: Socket = io(import.meta.env.VITE_SOCKET_URL || (import.meta.env.DEV ? `http://${window.location.hostname}:3001` : window.location.origin), { autoConnect: true })
 const roleGroups = [
-  { title: 'Good team', roles: [['Priest', 'Choose a player to learn if they are good.'], ['Bard', 'Choose a player. They learn that you are the Bard.'], ['Sage', 'Choose a player. At the start of the next night, learn their role.'], ['Guard', 'Choose a player. They cannot die tonight.'], ['Knight', 'Choose a player. If you die, and they are the Demon, they die instead.']] },
-  { title: 'Evil team', roles: [['Minion', 'Your Demon is your ally. Choose another player to learn their role.'], ['Demon', 'Choose a player to kill tonight.']] },
+  { title: 'Good team', roles: [['Priest', 'Learn if the chosen player is good.'], ['Bard', 'The chosen player learns that you are the Bard.'], ['Sage', "Tomorrow night, learn the chosen player's role."], ['Guard', 'The chosen player cannot die tonight.'], ['Knight', "If you die, and the chosen player is the Demon, they die instead."]] },
+  { title: 'Evil team', roles: [['Minion', 'Learn the chosen player’s role.'], ['Demon', 'The chosen player dies tonight.']] },
   { title: 'Wild card', roles: [['Fool', 'If the town executes you, you win.']] }
 ]
 
